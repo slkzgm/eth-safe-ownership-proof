@@ -43,7 +43,7 @@ async function isAuthCodeOnOpenseaBio(walletAddress, authCode) {
     }
 }
 
-class Web3SafeAuth {
+class EthSafeOwnershipProof {
     constructor({ authRetryInterval = 10, authMaxRetries = 30 }) {
         this.authCodes = new Map();
         this.authRetryInterval = authRetryInterval;
@@ -74,4 +74,4 @@ class Web3SafeAuth {
     }
 }
 
-module.exports = Web3SafeAuth;
+module.exports = EthSafeOwnershipProof;
