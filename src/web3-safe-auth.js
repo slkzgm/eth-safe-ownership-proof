@@ -1,4 +1,3 @@
-const {MongoClient} = require("mongodb");
 const { v4: uuidv4 } = require('uuid');
 
 async function isAuthCodeOnOpenseaBio(walletAddress, authCode) {
@@ -45,60 +44,33 @@ async function isAuthCodeOnOpenseaBio(walletAddress, authCode) {
 }
 
 class Web3SafeAuth {
-    constructor({ dbUrl, databaseName, collectionName, authRetryInterval = 10, authMaxRetries = 30}) {
-        this.client = new MongoClient(dbUrl);
-        this.collection = this.client.db(databaseName).collection(collectionName);
+    constructor({ authRetryInterval = 10, authMaxRetries = 30 }) {
+        this.authCodes = new Map();
         this.authRetryInterval = authRetryInterval;
         this.authMaxRetries = authMaxRetries;
     }
 
     async generateUniqueCode(walletAddress) {
         const uniqueCode = uuidv4();
-
-        try {
-            await this.client.connect();
-            await this.collection.updateOne({
-                walletAddress
-            }, {
-                $set: { walletAddress, authCode: uniqueCode }
-            }, {
-                upsert: true
-            });
-            return uniqueCode;
-        } catch (e) {
-            throw new Error(`Failed to generate unique code: ${e.message}`);
-        } finally {
-            await this.client.close();
-        }
+        this.authCodes.set(walletAddress, uniqueCode);
+        return uniqueCode;
     }
 
     async verifyAuthCode(walletAddress) {
-        try {
-            await this.client.connect();
-            const document = await this.collection.findOne({
-                walletAddress
-            }, {
-                projection: { _id: 0, authCode: 1 }
-            })
-            if (document === null) {
-                throw new Error('No corresponding document found in database');
-            }
-            if (!document.authCode) {
-                throw new Error('Document authCode invalid');
-            }
-            for (let i = 0; i < this.authMaxRetries; i++) {
-                const authCodeFound = await isAuthCodeOnOpenseaBio(walletAddress, document.authCode);
-                if (authCodeFound) {
-                    return true;
-                }
-                await new Promise(resolve => setTimeout(resolve, this.authRetryInterval * 1000));
-            }
-            return false;
-        } catch (e) {
-            throw new Error(`Failed to verify auth code: ${e.message}`);
-        } finally {
-            await this.client.close();
+        const authCode = this.authCodes.get(walletAddress);
+        if (!authCode) {
+            throw new Error('Auth code not found');
         }
+        for (let i = 0; i < this.authMaxRetries; i++) {
+            const authCodeFound = await isAuthCodeOnOpenseaBio(walletAddress, authCode);
+            if (authCodeFound) {
+                this.authCodes.delete(walletAddress);
+                return true;
+            }
+            await new Promise(resolve => setTimeout(resolve, this.authRetryInterval * 1000));
+        }
+        this.authCodes.delete(walletAddress);
+        return false;
     }
 }
 

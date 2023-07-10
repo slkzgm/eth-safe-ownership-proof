@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mongodb": "^5.7.0",
     "uuid": "^9.0.0"
   }
 }
