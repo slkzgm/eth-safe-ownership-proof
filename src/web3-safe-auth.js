@@ -45,7 +45,7 @@ async function isAuthCodeOnOpenseaBio(walletAddress, authCode) {
 }
 
 class Web3SafeAuth {
-    constructor({ dbUrl, databaseName, collectionName, authRetryInterval = 10, authMaxRetries = 30}) {
+    constructor({ dbUrl, databaseName, collectionName, authRetryInterval = 10, authMaxRetries = 30 }) {
         this.client = new MongoClient(dbUrl);
         this.collection = this.client.db(databaseName).collection(collectionName);
         this.authRetryInterval = authRetryInterval;
