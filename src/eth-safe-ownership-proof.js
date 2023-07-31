@@ -31,9 +31,9 @@ async function isAuthCodeOnOpenseaBio(walletAddress, authCode) {
         });
         const openseaBio = (await request.json()).data?.account?.bio;
 
-        if (!openseaBio) {
+        if (!openseaBio && openseaBio !== '') {
             throw new Error('Unable to retrieve Opensea bio');
-        } else if (!openseaBio.includes(authCode)) {
+        } else if (openseaBio === '' || !openseaBio.includes(authCode)) {
             return false;
         } else {
             return true;
@@ -50,7 +50,7 @@ class EthSafeOwnershipProof {
         this.authMaxRetries = authMaxRetries;
     }
 
-    async generateUniqueCode(walletAddress) {
+    generateUniqueCode(walletAddress) {
         const uniqueCode = uuidv4();
         this.authCodes.set(walletAddress, uniqueCode);
         return uniqueCode;
